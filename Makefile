@@ -3,7 +3,7 @@ export
 
 define check_state
 echo -e $(STATE_OK) || echo -e $(STATE_FAIL);\
-cat errors; \
+cat $(ERR_FILE); \
 rm -rf errors
 endef
 
