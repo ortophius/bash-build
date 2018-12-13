@@ -19,16 +19,31 @@ modules: head
 	@echo "Добавляем остальные модули"
 	@for module in $(MODULES); do \
 		echo -en "$$module --> $(DIST_DIR)/$(END_SCRIPT)\t"; \
-		cat $$module >> $(DIST_DIR)/$(END_SCRIPT) 2> errors && $(call check_state);\
+		cat $$module | grep -v "# \|#!" >> $(DIST_DIR)/$(END_SCRIPT) 2> errors && $(call check_state);\
 	done
 	@echo $(END_OF_TARGET)	
 
-head: clean 
+head: test clean
 	@echo "Добавляем заглавные модули"
+	@echo "#!$(WRAPPER)" >> $(DIST_DIR)/$(END_SCRIPT)
 	@for module in $(HEAD_FILES); do \
 		echo -en "$$module --> $(DIST_DIR)/$(END_SCRIPT)\t";\
-		cat $$module >> $(DIST_DIR)/$(END_SCRIPT) 2> errors && $(call check_state);\
+		cat $$module | grep -v "# \|#!" >> $(DIST_DIR)/$(END_SCRIPT) 2> errors && $(call check_state);\
 	done
 	@echo $(END_OF_TARGET)
+
+test:
+	@bats -v &>/dev/null; \
+	if [ $$? -eq 0 ]; then \
+		echo -e "\e[32mЗапускаем тесты...\e[0m"; \
+		bats $(MOD_DIR); \
+	else \
+		echo -e "\e[32mУстанавливаем bats. Может потребоваться ввод пароля.\e[0m"; \
+		git clone https://github.com/sstephenson/bats.git; \
+		sudo bats/install.sh /usr/local; \
+		rm -rf bats; \
+		$(MAKE) test; \
+	fi;
+	
 clean:
 	rm -rf $(DIST_DIR)/*
